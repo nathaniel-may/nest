@@ -15,7 +15,8 @@ object NestProperties extends Properties("Nest"){
         Nest(evenV
           .zip(evenV.reverse)
           .take(evenV.size/2)
-          .map{case (a, b) => ABPair(a, b)}
+          .map { case (a, b) => ABPair(a, b) }
+          .reverse
           .toList :_*).toList.map(_.fold(identity, identity)) == evenV.toList //TODO this fold syntax sucks. Find a better way to do this when A == B
       }
     }
