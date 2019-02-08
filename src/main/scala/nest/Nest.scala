@@ -1,6 +1,7 @@
 package nest
 
 import scalaz.Scalaz.unfold
+import reflect.runtime.universe.TypeTag
 
 
 trait Pair[+A, +B]
@@ -99,17 +100,10 @@ trait Nest[+A, +B] {
     }
   }
 
-  //TODO use toStream.toList instead?
-  def toList: List[Either[A, B]] = {
-    def go(nested: Nest[A, B], lefts: List[Either[A, B]], rights: List[Either[A, B]]): List[Either[A, B]] = nested match {
-      case EmptyNest           => lefts.reverse ::: rights
-      case NestCons(pair, nps) => pair match {
-        case ABPair(a, b) => go(nps, Left(a)  :: lefts, Right(b) :: rights)
-        case BAPair(b, a) => go(nps, Right(b) :: lefts, Left(a)  :: rights)
-      }
-    }
+  def toList: List[Either[A, B]] = toStream.toList
 
-    go(this, List(), List())
-  }
+  // TODO depends on Dotty union types:
+  // def toStream[C >: A | B : TypeTag] = toStream.map{_.fold[C](identity, identity)}
+  // def toList[C >: A | B : TypeTag] = toStream[C].toList
 
 }

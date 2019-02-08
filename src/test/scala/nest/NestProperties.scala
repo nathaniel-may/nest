@@ -6,24 +6,22 @@ import org.scalacheck.{Arbitrary, Gen, Properties, Shrink}
 
 // Project
 import syntax._
+import testingUtil.Functions._
+import testingUtil.Generators._
 
 object NestProperties extends Properties("Nest"){
 
-    property("toList works") = forAll {
-      v: Vector[Int] => {
-        val evenV = if (v.size % 2 != 0) v :+ 0 else v
-        Nest(evenV
-          .zip(evenV.reverse)
-          .take(evenV.size/2)
-          .map { case (a, b) => ABPair(a, b) }
-          .reverse
-          .toList :_*).toList.map(_.fold(identity, identity)) == evenV.toList //TODO this fold syntax sucks. Find a better way to do this when A == B
-      }
+    property("toList works") = forAll(evenGen[Int]) {
+      (e: Even[Int]) =>
+        toNest(e).toList.map(_.fold(identity, identity)) ==
+        e.wrapped.toList
     }
 
-  //    property("toStream works") = forAll {
-  //
-  //    }
+    property("toStream works") = forAll(evenGen[Int]) {
+      (e: Even[Int]) =>
+        toNest(e).toStream.map(_.fold(identity, identity)) ==
+          e.wrapped.toStream
+    }
 
     property("matching works") = forAll { //TODO improve this test so all cases are hit
       (a: Int, b: Int) => {
