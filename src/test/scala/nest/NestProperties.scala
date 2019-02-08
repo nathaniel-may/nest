@@ -40,7 +40,7 @@ object NestProperties extends Properties("Nest"){
       val n0 = Nest((a, b))
       (n0 match {
         case EmptyNest           => EmptyNest
-        case x << EmptyNest >> y => x << EmptyNest >> y
+        case x << EmptyNest >> y => Nest(x, y)//TODO can't get this to work x << EmptyNest >> y
         case x << nest >> y      => x << nest >> y
         //TODO add this case :   val n3:   Nest[Boolean, String] = "hey" << (true << n0 >> "hi") >> false
       }) == n0

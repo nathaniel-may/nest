@@ -3,100 +3,116 @@ package nest
 import scalaz.Scalaz.unfold
 import reflect.runtime.universe.TypeTag
 
-
-trait Pair[+A, +B]
-
-sealed case class ABPair[+A, +B](a: A, b: B) extends Pair[A, B]
-sealed case class BAPair[+A, +B](b: B, a: A) extends Pair[A, B]
-
-sealed case class NestCons[+A, +B](outer: Pair[A, B], inner: Nest[A, B]) extends Nest[A, B]
 case object EmptyNest extends Nest[Nothing, Nothing]
+private[nest] final case class NestCons[+A, +B](pairs: List[Pair[A, B]]) extends Nest[A, B]
+
+final case class NestWithoutRightB[A, B](nest: Nest[A, B], a: A) {
+  def >>(b: B): Nest[A, B] = nest match {
+    case EmptyNest       => Nest(a, b)
+    case NestCons(pairs) => NestCons(AB(a, b) :: pairs)
+  }
+}
+
+final case class NestWithoutRightA[A, B](nest: Nest[A, B], b: B) {
+  def >>(a: A): Nest[A, B] = nest match {
+    case EmptyNest       => NestCons(List(BA(b, a)))
+    case NestCons(pairs) => NestCons(AB(a, b) :: pairs)
+  }
+}
+
+private[nest] trait Pair[+A, +B]{
+  def toTuple: Either[(A, B), (B, A)] = this match {
+    case AB(a, b) => Left (a, b)
+    case BA(b, a) => Right(b, a)
+  }
+}
+private object Pair {
+  // Not returning Pair because of type erasure
+  def apply[A, B](a: A, b: B): AB[A, B] = AB(a, b)
+  def apply[A, B](b: B, a: A): BA[A, B] = BA(b, a)
+}
+private[nest] case class AB[A, B] (a: A, b: B) extends Pair[A, B]
+object AB {
+  def apply[A, B](pair: (A, B)): AB[A, B] = AB(pair._1, pair._2)
+}
+private[nest] case class BA[A, B] (b: B, a: A) extends Pair[A, B]
+object BA {
+  def apply[A, B](pair: (B, A)): BA[A, B] = BA(pair._1, pair._2)
+}
 
 object Nest {
-  def apply[A, B](pairs: Pair[A, B]*): Nest[A, B] =
-    pairs.foldLeft[Nest[A, B]](EmptyNest){ case (nest, p) => NestCons(p, nest) }
+  def apply[A, B](pair: (A, B)): Nest[A, B] = Nest(pair._1, pair._2)
+  def apply[A, B](a: A, b: B): Nest[A, B] = NestCons(List(Pair(a, b)))
+  def apply[A, B](pair: AB[A, B]): Nest[A, B] = Nest(pair.a, pair.b)
+  def apply[A, B](pair: BA[A, B]): Nest[A, B] = NestCons(List(pair))
 
-  def apply[A, B](pair: (A, B)): Nest[A, B] = Nest(ABPair(pair._1, pair._2))
+  private[nest] def toPair[A, B](eab: Either[(A, B), (B, A)]): Pair[A, B] =
+    eab.fold(p => AB(p._1, p._2), p => BA(p._1, p._2))
+
 }
 
 trait Nest[+A, +B] {
-  val depth: Int = this match {
-    case EmptyNest         => 0
-    case NestCons(_, nest) => 1 + nest.depth
+  lazy val depth: Int = this match {
+    case EmptyNest       => 0
+    case NestCons(pairs) => pairs.size
   }
 
-  val size: Int = depth
+  lazy val size: Int = depth
 
-  val aDepth: Int = this match {
-    case EmptyNest         => 0
-    case NestCons(_, nest) => 1 + nest.aDepth
+  // TODO flatmap impl (or ap impl)
+  //def flatMap[C, D](f: Either[(A, B), (B, A)] => Nest[C, D]): Nest[C, D] = ???
+
+  def map[C, D](f: Either[(A, B), (B, A)] => Either[(C, D), (D, C)]): Nest[C, D] = this match {
+    case en@EmptyNest    => en
+    case NestCons(pairs) => NestCons[C, D](pairs.map {
+      case AB(a, b) => Nest.toPair(f(Left (a, b)))
+      case BA(b, a) => Nest.toPair(f(Right(b, a)))
+    })
   }
 
-  val bDepth: Int = this match {
-    case EmptyNest         => 0
-    case NestCons(_, nest) => 1 + nest.bDepth
+  def reverse: Nest[A, B] = this match {
+    case EmptyNest       => EmptyNest
+    case NestCons(pairs) => NestCons(pairs.reverse)
   }
 
-  def map[C, D](f: Pair[A, B] => Pair[C, D]): Nest[C, D] = this match {
-    case EmptyNest         => EmptyNest
-    case NestCons(out, in) => NestCons(f(out), in.map(f))
+  def drop(n: Int): Nest[A, B] = this match {
+    case EmptyNest       => EmptyNest
+    case NestCons(pairs) => NestCons(pairs.drop(n))
   }
 
-  def insideOut: Nest[A, B] = reverse
+  def take(n: Int): Nest[A, B] = this match {
+    case EmptyNest       => EmptyNest
+    case NestCons(pairs) => NestCons(pairs.take(n))
+  }
 
-  def reverse: Nest[A, B] = {
-    def go(input: Nest[A, B], backwards: Nest[A, B]): Nest[A, B] = input match {
-      case EmptyNest           => backwards
-      case NestCons(out, nest) => go(nest, NestCons(out, backwards))
+  def prepend[C >: A, D >: B](nest: Nest[C, D]): Nest[C, D] = this match {
+    case EmptyNest               => EmptyNest
+    case nc@NestCons(afterPairs) => nest match {
+      case EmptyNest             => nc
+      case NestCons(beforePairs) => NestCons[C, D](beforePairs ::: afterPairs)
     }
-
-    go(this, EmptyNest)
   }
 
-  def drop(n: Int): Nest[A, B] = {
-    def go(toDrop: Int, in: Nest[A, B]): Nest[A, B] = in match {
-      case EmptyNest                     => EmptyNest
-      case NestCons(_, _) if toDrop <= 0 => in
-      case NestCons(_, nest)             => go(toDrop - 1, nest)
-    }
-
-    go(n, this)
-  }
-
-  def take(n: Int): Nest[A, B] = {
-    def go(toTake: Int, in: Nest[A, B], acc: Nest[A, B]): Nest[A, B] = in match {
-      case EmptyNest                     => acc
-      case NestCons(_, _) if toTake <= 0 => acc
-      case NestCons(out, nest)           => go(toTake - 1, nest, NestCons(out, acc))
-    }
-
-    go(n, this, EmptyNest).reverse
-  }
-
-  def prepend[C >: A, D >: B](nest: Nest[C, D]): Nest[C, D] = nest match {
-    case EmptyNest                 => this
-    case NestCons(pair, innerNest) => NestCons(pair, prepend(innerNest)) // TODO compiling but not type checking???
-  }
-
-  def prepend[C >: A, D >: B](pair: Pair[C, D]): Nest[C, D] = prepend(Nest(pair))
-
+//TODO force construction through fun syntax so I don't have to expose the AB, BA Pair types?
+//  def prepend[C >: A, D >: B](c: C, d: D): Nest[C, D] = prepend(Nest(c, d))
+//  def prepend[C >: A, D >: B](d: D, c: C): Nest[C, D] = prepend(Nest(BA(d, c)))
   def append[C >: A, D >: B](nest: Nest[C, D]): Nest[C, D] = nest.prepend(this)
-
-  def append[C >: A, D >: B](pair: Pair[C, D]): Nest[C, D] = append(Nest(pair))
-
+//  def append[C >: A, D >: B : TypeTag](pair: (C, D)): Nest[C, D] = append(Nest(pair))
+//  def append[C >: A, D >: B](pair: (D, C)): Nest[C, D] = append(Nest(BA(pair)))
   def pluck(index: Int): Nest[A, B] = this.take(index) append this.drop(index + 1)
 
-  def lift(index: Int): Option[Pair[A, B]] = this.drop(index) match {
-    case EmptyNest         => None
-    case NestCons(pair, _) => Some(pair)
+  def lift(index: Int): Option[Either[(A, B), (B, A)]] = this.drop(index) match {
+    case EmptyNest       => None
+    case NestCons(pairs) => pairs.headOption.flatMap { pair => Some(pair.toTuple) }
   }
 
+  //TODO get rid of this either with an implicit class with type [A <: C, B <: C] (either.merge works this way)
   def toStream: Stream[Either[A, B]] = {
     unfold[(Nest[A, B], Stream[Either[A, B]]), Either[A, B]]((this, Stream())) {
-      case (EmptyNest, Stream.Empty)            => None
-      case (EmptyNest, ab #:: abs)              => Some((ab, (EmptyNest, abs)))
-      case (NestCons(ABPair(a, b), nest), tail) => Some((Left(a), (nest, Right(b) #:: tail)))
-      case (NestCons(BAPair(b, a), nest), tail) => Some((Right(b), (nest, Left(a) #:: tail)))
+      case (EmptyNest, Stream.Empty)                => None
+      case (EmptyNest, ab #:: abs)                  => Some((ab, (EmptyNest, abs)))
+      case (NestCons(AB(a, b) :: pairs), tail) => Some((Left(a), (NestCons(pairs), Right(b) #:: tail)))
+      case (NestCons(BA(b, a) :: pairs), tail) => Some((Left(a), (NestCons(pairs), Right(b) #:: tail)))
     }
   }
 
@@ -106,4 +122,30 @@ trait Nest[+A, +B] {
   // def toStream[C >: A | B : TypeTag] = toStream.map{_.fold[C](identity, identity)}
   // def toList[C >: A | B : TypeTag] = toStream[C].toList
 
+}
+
+object UnionTypes {
+  // Union types hack from from http://milessabin.com/blog/2011/06/09/scala-union-types-curry-howard/
+  // issues with using these for subtyping:
+  // scala> implicitly[Int <:< ¬¬[Int]]
+  //  <console>:26: error: Cannot prove that Int <:< UnionTypes.¬¬[Int].
+  //    implicitly[Int <:< ¬¬[Int]]
+  //      ^
+  //
+  // scala> implicitly[¬¬[Int] <:< Int]
+  //   <console>:26: error: Cannot prove that UnionTypes.¬¬[Int] <:< Int.
+  //   implicitly[¬¬[Int] <:< Int]
+  //     ^
+  import scala.reflect.runtime.universe._
+
+  type  ¬ [A]    = A => Nothing
+  type ¬¬ [A]    = ¬[¬[A]]
+  type  ∨ [T, U] = ¬[¬[T] with ¬[U]]
+  type |∨|[T, U] = { type λ[X] = ¬¬[X] <:< (T ∨ U) }
+
+  def size[T : (Int |∨| String)#λ](t: T): Int =
+    t match {
+      case i: Int => i
+      case s: String => s.length
+    }
 }
