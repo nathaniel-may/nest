@@ -99,13 +99,12 @@ trait Nest[+A, +B] {
     }
   }
 
-//TODO force construction through fun syntax so I don't have to expose the AB, BA Pair types?
-//  def prepend[C >: A, D >: B](c: C, d: D): Nest[C, D] = prepend(Nest(c, d))
-//  def prepend[C >: A, D >: B](d: D, c: C): Nest[C, D] = prepend(Nest(BA(d, c)))
   def append[C >: A, D >: B](nest: Nest[C, D]): Nest[C, D] = nest.prepend(this)
-//  def append[C >: A, D >: B : TypeTag](pair: (C, D)): Nest[C, D] = append(Nest(pair))
-//  def append[C >: A, D >: B](pair: (D, C)): Nest[C, D] = append(Nest(BA(pair)))
   def pluck(index: Int): Nest[A, B] = this.take(index) append this.drop(index + 1)
+  def isEmpty: Boolean = this match {
+    case EmptyNest => true
+    case _         => false
+  }
 
   def lift(index: Int): Option[Either[(A, B), (B, A)]] = this.drop(index) match {
     case EmptyNest      => None
