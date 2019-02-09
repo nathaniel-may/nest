@@ -18,9 +18,8 @@ object Functions {
       .zip(v.wrapped.reverse)
       .take(v.wrapped.size/2)
       .reverse
-      .foldLeft[Nest[A, A]](EmptyNest) {
-        case (nest, (l, r)) => l << nest >> r
+      .foldLeft[Nest[A, A]](Nest.empty) {
+        case (nest, (l, r)) => <</>>(l, nest, r) // TODO fix with better syntax
       }
   }
-
 }
