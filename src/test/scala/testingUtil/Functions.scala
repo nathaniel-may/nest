@@ -13,14 +13,14 @@ object Functions {
   }
 
 
-  def toNest[A](v: Even[A]): Nest[A, A] = ??? //{
-//    v.wrapped
-//      .zip(v.wrapped.reverse)
-//      .take(v.wrapped.size/2)
-//      .reverse
-//      .foldLeft[Nest[A, A]](EmptyNest) {
-//        case (nest, (l, r)) => l << nest >> r
-//      }
-//  }
+  def toNest[A](v: Even[A]): Nest[A, A] = {
+    v.wrapped
+      .zip(v.wrapped.reverse)
+      .take(v.wrapped.size/2)
+      .reverse
+      .foldLeft[Nest[A, A]](EmptyNest) {
+        case (nest, (l, r)) => l << nest >> r
+      }
+  }
 
 }

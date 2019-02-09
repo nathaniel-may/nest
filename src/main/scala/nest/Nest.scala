@@ -4,19 +4,19 @@ import scalaz.Scalaz.unfold
 import reflect.runtime.universe.TypeTag
 
 case object EmptyNest extends Nest[Nothing, Nothing]
-private[nest] final case class NestCons[+A, +B](pairs: List[Pair[A, B]]) extends Nest[A, B]
+private[nest] final case class NestCons[+A, +B](pair: Pair[A, B], pairs: List[Pair[A, B]]) extends Nest[A, B]
 
 final case class NestWithoutRightB[A, B](nest: Nest[A, B], a: A) {
   def >>(b: B): Nest[A, B] = nest match {
-    case EmptyNest       => Nest(a, b)
-    case NestCons(pairs) => NestCons(AB(a, b) :: pairs)
+    case EmptyNest      => Nest(a, b)
+    case NestCons(h, t) => NestCons(AB(a, b), h :: t)
   }
 }
 
 final case class NestWithoutRightA[A, B](nest: Nest[A, B], b: B) {
   def >>(a: A): Nest[A, B] = nest match {
-    case EmptyNest       => NestCons(List(BA(b, a)))
-    case NestCons(pairs) => NestCons(AB(a, b) :: pairs)
+    case EmptyNest      => NestCons(BA(b, a), Nil)
+    case NestCons(h, t) => NestCons(AB(a, b), h :: t)
   }
 }
 
@@ -42,9 +42,13 @@ object BA {
 
 object Nest {
   def apply[A, B](pair: (A, B)): Nest[A, B] = Nest(pair._1, pair._2)
-  def apply[A, B](a: A, b: B): Nest[A, B] = NestCons(List(Pair(a, b)))
+  def apply[A, B](a: A, b: B): Nest[A, B] = NestCons(Pair(a, b), Nil)
   def apply[A, B](pair: AB[A, B]): Nest[A, B] = Nest(pair.a, pair.b)
-  def apply[A, B](pair: BA[A, B]): Nest[A, B] = NestCons(List(pair))
+  def apply[A, B](pair: BA[A, B]): Nest[A, B] = NestCons(pair, Nil)
+  def apply[A, B](l: List[Pair[A, B]]) = l match {
+    case Nil    => EmptyNest
+    case h :: t => NestCons(h, t)
+  }
 
   private[nest] def toPair[A, B](eab: Either[(A, B), (B, A)]): Pair[A, B] =
     eab.fold(p => AB(p._1, p._2), p => BA(p._1, p._2))
@@ -53,8 +57,8 @@ object Nest {
 
 trait Nest[+A, +B] {
   lazy val depth: Int = this match {
-    case EmptyNest       => 0
-    case NestCons(pairs) => pairs.size
+    case EmptyNest      => 0
+    case NestCons(h, t) => t.size + 1
   }
 
   lazy val size: Int = depth
@@ -64,32 +68,34 @@ trait Nest[+A, +B] {
 
   def map[C, D](f: Either[(A, B), (B, A)] => Either[(C, D), (D, C)]): Nest[C, D] = this match {
     case en@EmptyNest    => en
-    case NestCons(pairs) => NestCons[C, D](pairs.map {
+    case NestCons(pair, pairs) => Nest[C, D]((pair :: pairs).map {
       case AB(a, b) => Nest.toPair(f(Left (a, b)))
       case BA(b, a) => Nest.toPair(f(Right(b, a)))
     })
+
+
   }
 
   def reverse: Nest[A, B] = this match {
-    case EmptyNest       => EmptyNest
-    case NestCons(pairs) => NestCons(pairs.reverse)
+    case EmptyNest      => EmptyNest
+    case NestCons(h, t) => Nest((h :: t).reverse)
   }
 
   def drop(n: Int): Nest[A, B] = this match {
-    case EmptyNest       => EmptyNest
-    case NestCons(pairs) => NestCons(pairs.drop(n))
+    case EmptyNest      => EmptyNest
+    case NestCons(h, t) => Nest((h :: t).drop(n))
   }
 
   def take(n: Int): Nest[A, B] = this match {
-    case EmptyNest       => EmptyNest
-    case NestCons(pairs) => NestCons(pairs.take(n))
+    case EmptyNest      => EmptyNest
+    case NestCons(h, t) => Nest((h :: t).take(n))
   }
 
   def prepend[C >: A, D >: B](nest: Nest[C, D]): Nest[C, D] = this match {
-    case EmptyNest               => EmptyNest
-    case nc@NestCons(afterPairs) => nest match {
-      case EmptyNest             => nc
-      case NestCons(beforePairs) => NestCons[C, D](beforePairs ::: afterPairs)
+    case EmptyNest                   => EmptyNest
+    case nc@NestCons(hAfter, tAfter) => nest match {
+      case EmptyNest                  => nc
+      case NestCons(hBefore, tBefore) => Nest[C, D]((hBefore :: tBefore) ::: (hAfter :: tAfter))
     }
   }
 
@@ -102,17 +108,17 @@ trait Nest[+A, +B] {
   def pluck(index: Int): Nest[A, B] = this.take(index) append this.drop(index + 1)
 
   def lift(index: Int): Option[Either[(A, B), (B, A)]] = this.drop(index) match {
-    case EmptyNest       => None
-    case NestCons(pairs) => pairs.headOption.flatMap { pair => Some(pair.toTuple) }
+    case EmptyNest      => None
+    case NestCons(h, _) => Some(h.toTuple)
   }
 
   //TODO get rid of this either with an implicit class with type [A <: C, B <: C] (either.merge works this way)
   def toStream: Stream[Either[A, B]] = {
     unfold[(Nest[A, B], Stream[Either[A, B]]), Either[A, B]]((this, Stream())) {
-      case (EmptyNest, Stream.Empty)                => None
-      case (EmptyNest, ab #:: abs)                  => Some((ab, (EmptyNest, abs)))
-      case (NestCons(AB(a, b) :: pairs), tail) => Some((Left(a), (NestCons(pairs), Right(b) #:: tail)))
-      case (NestCons(BA(b, a) :: pairs), tail) => Some((Left(a), (NestCons(pairs), Right(b) #:: tail)))
+      case (EmptyNest, Stream.Empty)           => None
+      case (EmptyNest, ab #:: abs)             => Some((ab, (EmptyNest, abs)))
+      case (NestCons(AB(a, b), pairs), tail) => Some((Left(a), (Nest(pairs), Right(b) #:: tail)))
+      case (NestCons(BA(b, a), pairs), tail) => Some((Left(a), (Nest(pairs), Right(b) #:: tail)))
     }
   }
 
