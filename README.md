@@ -1,4 +1,6 @@
 # Nest
+[![codecov](https://codecov.io/gh/nathaniel-may/Nest/branch/master/graph/badge.svg?token=PoGKLjiXwQ)](https://codecov.io/gh/nathaniel-may/Nest)
+
 A new datatype
 
 TODO:
