@@ -5,8 +5,6 @@ import org.scalacheck.Prop.forAll
 import org.scalacheck.{Arbitrary, Gen, Properties, Shrink}
 
 // Project
-import nest._
-import syntax._
 import Functions._
 import Generators._
 
@@ -29,10 +27,10 @@ object NestProperties extends Properties("Nest"){
         case a </: Nest.empty :/> b         => List(Left(a), Right(b))
         case a </: nest :/> b               => Left(a) :: nest.toList ::: List(Right(b))
         case a </: (b </: nest :/> c) :/> d => List(Left(a), Left(b)) ::: nest.toList ::: List(Right(c), Right(d))
-        case b <\: Nest.empty :\> a         => List(Left(a), Right(b))
-        case b <\: nest :\> a               => Left(a) :: nest.toList ::: List(Right(b))
-        case d <\: (c <\: nest :\> b) :\> a => List(Left(a), Left(b)) ::: nest.toList ::: List(Right(c), Right(d))
-        case d <\: (b </: nest :/> c) :\> a => List(Left(a), Left(b)) ::: nest.toList ::: List(Right(c), Right(d))
+        case b <\: Nest.empty :\> a         => List(Right(b), Left(a))
+        case b <\: nest :\> a               => Right(b) :: nest.toList ::: List(Left(a))
+        case d <\: (c <\: nest :\> b) :\> a => List(Right(d), Right(c)) ::: nest.toList ::: List(Left(b), Left(a))
+        case d <\: (b </: nest :/> c) :\> a => List(Right(d), Left(b)) ::: nest.toList ::: List(Right(c), Left(a))
         case a </: (b <\: nest :\> c) :/> d => List(Left(a), Right(b)) ::: nest.toList ::: List(Left(c), Right(d))
       }
       list == n.toList
