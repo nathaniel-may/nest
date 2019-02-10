@@ -36,7 +36,18 @@ object NestProperties extends Properties("Nest"){
       list == n.toList
   }
 
-//  property("constructor syntax works") = forAll {
-//
-//  }
+  property("constructor syntax works") = forAll(nestGen[Int, Boolean]) {
+    (n: Nest[Int, Boolean]) =>
+      (n match {
+        case Nest.empty                     => Nest.empty
+        case a </: Nest.empty :/> b         => a </: Nest.empty :/> b
+        case a </: nest :/> b               => a </: nest :/> b
+        case a </: (b </: nest :/> c) :/> d => a </: (b </: nest :/> c) :/> d
+        case b <\: Nest.empty :\> a         => b <\: Nest.empty :\> a
+        case b <\: nest :\> a               => b <\: nest :\> a
+        case d <\: (c <\: nest :\> b) :\> a => d <\: (c <\: nest :\> b) :\> a
+        case d <\: (b </: nest :/> c) :\> a => d <\: (b </: nest :/> c) :\> a
+        case a </: (b <\: nest :\> c) :/> d => a </: (b <\: nest :\> c) :/> d
+      }) == n
+  }
 }
