@@ -7,11 +7,11 @@ private[nest] final case class NestWrap[+A, +B](pairs: List[Pair[A, B]]) extends
 final case class />>[A, B](n: Nest[A, B], a: A)
 final case class \>>[A, B](n: Nest[A, B], b: B)
 
-final case class NestWithoutRightB[A, B](nest: Nest[A, B], a: A) {
+final case class PartialNestA[A, B](nest: Nest[A, B], a: A) {
   def />>(b: B): Nest[A, B] = nest.wrapWith(AB(a, b) :: _)
 }
 
-final case class NestWithoutRightA[A, B](nest: Nest[A, B], b: B) {
+final case class PartialNestB[A, B](nest: Nest[A, B], b: B) {
   def \>>(a: A): Nest[A, B] = nest.wrapWith(BA(b, a) :: _)
 }
 
@@ -82,6 +82,9 @@ object Nest {
 
 //TODO deal with syntax and sealing
 trait Nest[+A, +B] {
+  def />>[D >: B](d: D): PartialNestB[A, D] = PartialNestB(this, d)
+  def \>>[C >: A](c: C): PartialNestA[C, B] = PartialNestA(this, c)
+
   private[nest] def use[C](f: List[Pair[A, B]] => C): C = this match {
     case NestWrap(pairs) => f(pairs)
   }
