@@ -1,10 +1,7 @@
-package testingUtil
+package nest
 
+import nest.Functions._
 import org.scalacheck.{Arbitrary, Gen}
-import org.scalacheck.Arbitrary._
-import testingUtil.Functions._
-
-import nest.Nest
 
 object Generators {
 
@@ -24,13 +21,17 @@ object Generators {
     v <- evenGen[A]
   } yield toNest(v)
 
-  def nestGen[A, B](implicit eva: Arbitrary[A], evb: Arbitrary[A]): Gen[Nest[A, A]] = Gen.sized { size =>
-    for {
-      va <- evenGen(size)[A]
-      vb <- evenGen(size)[B]
-    } yield toNest(v)
-  }
+  def pairGen[A, B](implicit eva: Arbitrary[A], evb: Arbitrary[B]): Gen[nest.Pair[A, B]] = for {
+    a <- eva.arbitrary
+    b <- evb.arbitrary
+    p <- Gen.oneOf(nest.AB(a, b), nest.BA(b, a))
+  } yield p
 
-  def nestGen[A, B]: Gen[Nest[A, B]] = ???
+  def nestGen[A, B](implicit eva: Arbitrary[A], evb: Arbitrary[B]): Gen[Nest[A, B]] = Gen.sized { size =>
+    for {
+      pairs <- Gen.listOfN(size, pairGen[A, B])
+      nest  =  NestWrap(pairs)
+    } yield nest
+  }
 
 }

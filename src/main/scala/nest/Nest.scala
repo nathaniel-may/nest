@@ -4,31 +4,31 @@ import scalaz.Scalaz.unfold
 
 private[nest] final case class NestWrap[+A, +B](pairs: List[Pair[A, B]]) extends Nest[A, B]
 
-final case class />>[A, B](n: Nest[A, B], a: A)
-final case class \>>[A, B](n: Nest[A, B], b: B)
+final case class :/>[+A, +B](n: Nest[A, B], a: A) {
+  def </:[C >: A, D >: B](d: D): Nest[C, D] = </>(a, n, d)
+}
+final case class :\>[+A, +B](n: Nest[A, B], b: B) {
+  def <\:[C >: A, D >: B](c: C): Nest[C, D] = <\>(b, n, c)
+}
 
-object <</ {
-  def apply[A, B](n: Nest[A, B], b: B): (Nest[A, B], B) = (n, b)
-  def apply[A, B](a: A, partial: (Nest[A, B], B)): Nest[A, B] = <</>>(a, partial._1, partial._2)
-  def unapply[A, B](n: Nest[A, B]): Option[(B, />>[A, B])] = n match {
+object </: {
+  def unapply[A, B](n: Nest[A, B]): Option[(B, :/>[A, B])] = n match {
     case Nest.empty        => None
-    case <</>>(a, nest, b) => Some((b, />>(nest, a)))
-    case <<\>>(b, nest, a) => Some((b, />>(nest, a)))
+    case </>(a, nest, b) => Some((b, :/>(nest, a)))
+    case <\>(_, _, _)    => None
   }
 }
 
-object <<\ {
-  def apply[A, B](n: Nest[A, B], a: A): (Nest[A, B], A) = (n, a)
-  def apply[A, B](b: B, partial: (Nest[A, B], A)): Nest[A, B] = <<\>>(b, partial._1, partial._2)
-  def unapply[A, B](n: Nest[A, B]): Option[(A, \>>[A, B])] = n match {
+object <\: {
+  def unapply[A, B](n: Nest[A, B]): Option[(A, :\>[A, B])] = n match {
     case Nest.empty        => None
-    case <</>>(a, nest, b) => Some((a, \>>(nest, b)))
-    case <<\>>(b, nest, a) => Some((a, \>>(nest, b)))
+    case </>(_, _, _)    => None
+    case <\>(b, nest, a) => Some((a, :\>(nest, b)))
   }
 }
 
-object <</>> {
-  def apply[A, B](a: A, nest: Nest[A, B], b: B) = nest.wrapWith(AB(a, b) :: _)
+object </> {
+  def apply[A, B](a: A, nest: Nest[A, B], b: B): Nest[A, B] = nest.wrapWith(AB(a, b) :: _)
   def unapply[A, B](n: Nest[A, B]): Option[(A, Nest[A, B], B)] = n match {
     case Nest.empty                  => None
     case NestWrap(BA(_, _) :: _)     => None
@@ -36,8 +36,8 @@ object <</>> {
   }
 }
 
-object <<\>> {
-  def apply[A, B](b: B, nest: Nest[A, B], a: A) = nest.wrapWith(BA(b, a) :: _)
+object <\> {
+  def apply[A, B](b: B, nest: Nest[A, B], a: A): Nest[A, B] = nest.wrapWith(BA(b, a) :: _)
   def unapply[A, B](n: Nest[A, B]): Option[(B, Nest[A, B], A)] = n match {
     case Nest.empty                  => None
     case NestWrap(AB(_, _) :: _)     => None
@@ -79,9 +79,9 @@ object Nest {
 }
 
 //TODO deal with syntax and sealing
-trait Nest[+A, +B] {
-  def />>[C >: A, D >: B](d: D): (Nest[A, B], D) = (this, d)
-  def \>>[C >: A, D >: B](c: C): (Nest[A, B], C) = (this, c)
+trait Nest[+A, +B] { //TODO I switched these...? c and d
+  def :/>[C >: A, D >: B](c: C): :/>[C, D] = new :/>[C, D](this, c)
+  def :\>[C >: A, D >: B](d: D): :\>[C, D] = new :\>[C, D](this, d)
 
   private[nest] def use[C](f: List[Pair[A, B]] => C): C = this match {
     case NestWrap(pairs) => f(pairs)

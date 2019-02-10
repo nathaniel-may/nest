@@ -1,7 +1,4 @@
-package testingUtil
-
-import nest._
-import syntax._
+package nest
 
 object Functions {
 
@@ -12,14 +9,13 @@ object Functions {
       if (v.size % 2 != 0) new Even(v :+ makeEvenWith) else new Even(v)
   }
 
-
   def toNest[A](v: Even[A]): Nest[A, A] = {
     v.wrapped
       .zip(v.wrapped.reverse)
       .take(v.wrapped.size/2)
       .reverse
       .foldLeft[Nest[A, A]](Nest.empty) {
-        case (nest, (l, r)) => <</>>(l, nest, r) // TODO fix with better syntax
+        case (nest, (l, r)) => </>(l, nest, r) // TODO fix with better syntax
       }
   }
 }
