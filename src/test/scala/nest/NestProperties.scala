@@ -17,10 +17,9 @@ object NestProperties extends Properties("Nest"){
       NestWrap(pairs).toList == inOrder(pairs)
   }
 
-  property("toStream works") = forAll(evenGen[Int]) {
-    (e: Even[Int]) =>
-      toNest(e).toStream.map(_.fold(identity, identity)) ==
-        e.wrapped.toStream
+  property("toStream works") = forAll(pairsGen[Int, Boolean]) {
+    (pairs: List[Pair[Int, Boolean]]) =>
+      NestWrap(pairs).toStream == inOrder(pairs).toStream
   }
 
   property("matching works") = forAll(nestGen[Int, Boolean]) {
