@@ -27,10 +27,10 @@ object NestProperties extends Properties("Nest"){
         case a </: Nest.empty :/> b         => List(Left(a), Right(b))
         case a </: nest :/> b               => Left(a) :: nest.toList ::: List(Right(b))
         case a </: (b </: nest :/> c) :/> d => List(Left(a), Left(b)) ::: nest.toList ::: List(Right(c), Right(d))
-        case b <\: Nest.empty :\> a         => List(Right(b), Left(a))
-        case b <\: nest :\> a               => Right(b) :: nest.toList ::: List(Left(a))
-        case d <\: (c <\: nest :\> b) :\> a => List(Right(d), Right(c)) ::: nest.toList ::: List(Left(b), Left(a))
-        case d <\: (b </: nest :/> c) :\> a => List(Right(d), Left(b)) ::: nest.toList ::: List(Right(c), Left(a))
+        case a <\: Nest.empty :\> b         => List(Right(a), Left(b))
+        case a <\: nest :\> b               => Right(a) :: nest.toList ::: List(Left(b))
+        case a <\: (b <\: nest :\> c) :\> d => List(Right(a), Right(b)) ::: nest.toList ::: List(Left(c), Left(d))
+        case a <\: (b </: nest :/> c) :\> d => List(Right(a), Left(b)) ::: nest.toList ::: List(Right(c), Left(d))
         case a </: (b <\: nest :\> c) :/> d => List(Left(a), Right(b)) ::: nest.toList ::: List(Left(c), Right(d))
       }
       list == n.toList
@@ -43,10 +43,10 @@ object NestProperties extends Properties("Nest"){
         case a </: Nest.empty :/> b         => a </: Nest.empty :/> b
         case a </: nest :/> b               => a </: nest :/> b
         case a </: (b </: nest :/> c) :/> d => a </: (b </: nest :/> c) :/> d
-        case b <\: Nest.empty :\> a         => b <\: Nest.empty :\> a
-        case b <\: nest :\> a               => b <\: nest :\> a
-        case d <\: (c <\: nest :\> b) :\> a => d <\: (c <\: nest :\> b) :\> a
-        case d <\: (b </: nest :/> c) :\> a => d <\: (b </: nest :/> c) :\> a
+        case a <\: Nest.empty :\> b         => a <\: Nest.empty :\> b
+        case a <\: nest :\> b               => a <\: nest :\> b
+        case a <\: (b <\: nest :\> c) :\> d => a <\: (b <\: nest :\> c) :\> d
+        case a <\: (b </: nest :/> c) :\> d => a <\: (b </: nest :/> c) :\> d
         case a </: (b <\: nest :\> c) :/> d => a </: (b <\: nest :\> c) :/> d
       }) == n
   }
