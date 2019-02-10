@@ -28,18 +28,20 @@ object <\: {
 object </> {
   def apply[A, B](a: A, nest: Nest[A, B], b: B): Nest[A, B] = nest.wrapWith(AB(a, b) :: _)
   def unapply[A, B](n: Nest[A, B]): Option[(A, Nest[A, B], B)] = n match {
-    case Nest.empty                  => None
+    case Nest.empty              => None
     case Nest(BA(_, _) :: _)     => None
     case Nest(AB(a, b) :: pairs) => Some(a, Nest(pairs), b)
+    case Nest(_)                 => None
   }
 }
 
 object <\> {
   def apply[A, B](b: B, nest: Nest[A, B], a: A): Nest[A, B] = nest.wrapWith(BA(b, a) :: _)
   def unapply[A, B](n: Nest[A, B]): Option[(B, Nest[A, B], A)] = n match {
-    case Nest.empty                  => None
+    case Nest.empty              => None
     case Nest(AB(_, _) :: _)     => None
     case Nest(BA(b, a) :: pairs) => Some(b, Nest(pairs), a)
+    case Nest(_)                 => None
   }
 }
 
