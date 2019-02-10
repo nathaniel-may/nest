@@ -12,12 +12,12 @@ object NestProperties extends Properties("Nest"){
 
   property("toList works") = forAll(pairsGen[Int, Boolean]) {
     (pairs: List[Pair[Int, Boolean]]) =>
-      NestWrap(pairs).toList == inOrder(pairs)
+      Nest(pairs).toList == inOrder(pairs)
   }
 
   property("toStream works") = forAll(pairsGen[Int, Boolean]) {
     (pairs: List[Pair[Int, Boolean]]) =>
-      NestWrap(pairs).toStream == inOrder(pairs).toStream
+      Nest(pairs).toStream == inOrder(pairs).toStream
   }
 
   property("matching works") = forAll(nestGen[Int, Boolean]) {

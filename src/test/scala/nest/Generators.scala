@@ -34,7 +34,7 @@ object Generators {
   def nestGen[A, B](implicit eva: Arbitrary[A], evb: Arbitrary[B]): Gen[Nest[A, B]] = Gen.sized { size =>
     for {
       pairs <- Gen.resize(size, pairsGen[A, B])
-      nest  =  NestWrap(pairs)
+      nest  =  Nest(pairs)
     } yield nest
   }
 

@@ -2,8 +2,6 @@ package nest
 
 import scalaz.Scalaz.unfold
 
-private[nest] final case class NestWrap[+A, +B](pairs: List[Pair[A, B]]) extends Nest[A, B]
-
 final case class :/>[+A, +B](n: Nest[A, B], b: B) {
   def </:[C >: A, D >: B](c: C): Nest[C, D] = </>(c, n, b)
 }
@@ -31,8 +29,8 @@ object </> {
   def apply[A, B](a: A, nest: Nest[A, B], b: B): Nest[A, B] = nest.wrapWith(AB(a, b) :: _)
   def unapply[A, B](n: Nest[A, B]): Option[(A, Nest[A, B], B)] = n match {
     case Nest.empty                  => None
-    case NestWrap(BA(_, _) :: _)     => None
-    case NestWrap(AB(a, b) :: pairs) => Some(a, NestWrap(pairs), b)
+    case Nest(BA(_, _) :: _)     => None
+    case Nest(AB(a, b) :: pairs) => Some(a, Nest(pairs), b)
   }
 }
 
@@ -40,8 +38,8 @@ object <\> {
   def apply[A, B](b: B, nest: Nest[A, B], a: A): Nest[A, B] = nest.wrapWith(BA(b, a) :: _)
   def unapply[A, B](n: Nest[A, B]): Option[(B, Nest[A, B], A)] = n match {
     case Nest.empty                  => None
-    case NestWrap(AB(_, _) :: _)     => None
-    case NestWrap(BA(b, a) :: pairs) => Some(b, NestWrap(pairs), a)
+    case Nest(AB(_, _) :: _)     => None
+    case Nest(BA(b, a) :: pairs) => Some(b, Nest(pairs), a)
   }
 }
 
@@ -66,36 +64,29 @@ object BA {
 }
 
 object Nest {
-  val empty = NestWrap(Nil)
+  val empty = Nest(Nil)
 
   def apply[A, B](pair: (A, B)): Nest[A, B] = Nest(pair._1, pair._2)
-  def apply[A, B](a: A, b: B): Nest[A, B] = NestWrap(List(AB(a, b)))
-  def apply[A, B](pair: AB[A, B]): Nest[A, B] = NestWrap(List(pair))
-  def apply[A, B](pair: BA[A, B]): Nest[A, B] = NestWrap[A, B](List(pair))
+  def apply[A, B](a: A, b: B): Nest[A, B] = Nest(List(AB(a, b)))
+  def apply[A, B](pair: AB[A, B]): Nest[A, B] = Nest(List(pair))
+  def apply[A, B](pair: BA[A, B]): Nest[A, B] = Nest[A, B](List(pair))
 
   private[nest] def toPair[A, B](eab: Either[(A, B), (B, A)]): Pair[A, B] =
     eab.fold(p => AB(p._1, p._2), p => BA(p._1, p._2))
 
 }
 
-//TODO deal with syntax and sealing
-trait Nest[+A, +B] { //TODO I switched these...? c and d
+final case class Nest[+A, +B] private[nest] (pairs: List[Pair[A, B]]) {
   def :/>[C >: A, D >: B](d: D): :/>[C, D] = new :/>[C, D](this, d)
   def :\>[C >: A, D >: B](c: C): :\>[C, D] = new :\>[C, D](this, c)
 
-  private[nest] def use[C](f: List[Pair[A, B]] => C): C = this match {
-    case NestWrap(pairs) => f(pairs)
-  }
+  private[nest] def use[C](f: List[Pair[A, B]] => C): C = f(pairs)
 
-  private[nest] def wrapWith[C >: A, D >: B](f: List[Pair[A, B]] => List[Pair[C, D]]): Nest[C, D] = this match {
-    case NestWrap(pairs) => NestWrap(f(pairs))
-  }
-
+  private[nest] def wrapWith[C >: A, D >: B](f: List[Pair[A, B]] => List[Pair[C, D]]): Nest[C, D] =
+    Nest(f(pairs))
 
   // TODO can improve efficiency
-  lazy val depth: Int = this match {
-    case NestWrap(pairs) => pairs.size
-  }
+  lazy val depth: Int = pairs.size
 
   lazy val size: Int = depth
 
@@ -103,21 +94,20 @@ trait Nest[+A, +B] { //TODO I switched these...? c and d
   //def flatMap[C, D](f: Either[(A, B), (B, A)] => Nest[C, D]): Nest[C, D] = ???
 
   // TODO replace with bimap???
-  def map[C, D](f: Either[(A, B), (B, A)] => Either[(C, D), (D, C)]): Nest[C, D] = this match {
-    case NestWrap(pairs) => NestWrap[C, D](pairs.map {
+  def map[C, D](f: Either[(A, B), (B, A)] => Either[(C, D), (D, C)]): Nest[C, D] =
+    Nest[C, D](pairs.map {
       case AB(a, b) => Nest.toPair(f(Left (a, b)))
       case BA(b, a) => Nest.toPair(f(Right(b, a)))
     })
-  }
 
   def reverse: Nest[A, B] = wrapWith[A, B](_.reverse)
   def drop(n: Int): Nest[A, B] = wrapWith(_.drop(n))
   def take(n: Int): Nest[A, B] = wrapWith(_.take(n))
 
   def prepend[C >: A, D >: B](nest: Nest[C, D]): Nest[C, D] = (nest, this) match {
-    case (NestWrap(before), NestWrap(after)) => NestWrap(before ::: after)
-    case (_, n @ NestWrap(_))                => n
-    case (n @ NestWrap(_), _)                => n
+    case (Nest(before), Nest(after)) => Nest(before ::: after)
+    case (_, n @ Nest(_))                => n
+    case (n @ Nest(_), _)                => n
     case (_, _)                              => this
   }
 
@@ -133,8 +123,8 @@ trait Nest[+A, +B] { //TODO I switched these...? c and d
     unfold[(Nest[A, B], Stream[Either[A, B]]), Either[A, B]]((this, Stream())) {
       case (Nest.empty, Stream.Empty)         => None
       case (Nest.empty, ab #:: abs)           => Some((ab, (Nest.empty, abs)))
-      case (NestWrap(AB(a, b) :: pairs), abs) => Some((Left(a),  (NestWrap(pairs), Right(b) #:: abs)))
-      case (NestWrap(BA(b, a) :: pairs), abs) => Some((Right(b), (NestWrap(pairs), Left(a)  #:: abs)))
+      case (Nest(AB(a, b) :: ps), abs) => Some((Left(a),  (Nest(ps), Right(b) #:: abs)))
+      case (Nest(BA(b, a) :: ps), abs) => Some((Right(b), (Nest(ps), Left(a)  #:: abs)))
     }
   }
 
