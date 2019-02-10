@@ -4,26 +4,26 @@ import scalaz.Scalaz.unfold
 
 private[nest] final case class NestWrap[+A, +B](pairs: List[Pair[A, B]]) extends Nest[A, B]
 
-final case class :/>[+A, +B](n: Nest[A, B], a: A) {
-  def </:[C >: A, D >: B](d: D): Nest[C, D] = </>(a, n, d)
+final case class :/>[+A, +B](n: Nest[A, B], b: B) {
+  def </:[C >: A, D >: B](c: C): Nest[C, D] = </>(c, n, b)
 }
-final case class :\>[+A, +B](n: Nest[A, B], b: B) {
-  def <\:[C >: A, D >: B](c: C): Nest[C, D] = <\>(b, n, c)
+final case class :\>[+A, +B](n: Nest[A, B], a: A) {
+  def <\:[C >: A, D >: B](d: D): Nest[C, D] = <\>(d, n, a)
 }
 
 object </: {
-  def unapply[A, B](n: Nest[A, B]): Option[(B, :/>[A, B])] = n match {
+  def unapply[A, B](n: Nest[A, B]): Option[(A, :/>[A, B])] = n match {
     case Nest.empty        => None
-    case </>(a, nest, b) => Some((b, :/>(nest, a)))
+    case </>(a, nest, b) => Some((a, :/>(nest, b)))
     case <\>(_, _, _)    => None
   }
 }
 
 object <\: {
-  def unapply[A, B](n: Nest[A, B]): Option[(A, :\>[A, B])] = n match {
+  def unapply[A, B](n: Nest[A, B]): Option[(B, :\>[A, B])] = n match {
     case Nest.empty        => None
     case </>(_, _, _)    => None
-    case <\>(b, nest, a) => Some((a, :\>(nest, b)))
+    case <\>(b, nest, a) => Some((b, :\>(nest, a)))
   }
 }
 
@@ -80,8 +80,8 @@ object Nest {
 
 //TODO deal with syntax and sealing
 trait Nest[+A, +B] { //TODO I switched these...? c and d
-  def :/>[C >: A, D >: B](c: C): :/>[C, D] = new :/>[C, D](this, c)
-  def :\>[C >: A, D >: B](d: D): :\>[C, D] = new :\>[C, D](this, d)
+  def :/>[C >: A, D >: B](d: D): :/>[C, D] = new :/>[C, D](this, d)
+  def :\>[C >: A, D >: B](c: C): :\>[C, D] = new :\>[C, D](this, c)
 
   private[nest] def use[C](f: List[Pair[A, B]] => C): C = this match {
     case NestWrap(pairs) => f(pairs)
