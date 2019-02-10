@@ -7,24 +7,24 @@ private[nest] final case class NestWrap[+A, +B](pairs: List[Pair[A, B]]) extends
 final case class />>[A, B](n: Nest[A, B], a: A)
 final case class \>>[A, B](n: Nest[A, B], b: B)
 
-final case class PartialNestA[A, B](nest: Nest[A, B], a: A) {
-  def />>(b: B): Nest[A, B] = nest.wrapWith(AB(a, b) :: _)
-}
-
-final case class PartialNestB[A, B](nest: Nest[A, B], b: B) {
-  def \>>(a: A): Nest[A, B] = nest.wrapWith(BA(b, a) :: _)
-}
-
+class <</[A, B](val n: Nest[A, B], val b: B)
 object <</ {
+  def apply[A, B](n: Nest[A, B], b: B): <</[A, B] = new <</(n, b)
+  def apply[A, B](a: A, partial: <</[A, B]): Nest[A, B] = <</>>(a, partial.n, partial.b)
   def unapply[A, B](n: Nest[A, B]): Option[(B, />>[A, B])] = n match {
     case Nest.empty        => None
     case <</>>(a, nest, b) => Some((b, />>(nest, a)))
+    case <<\>>(b, nest, a) => Some((b, />>(nest, a)))
   }
 }
 
+class <<\[A, B](val n: Nest[A, B], val a: A)
 object <<\ {
+  def apply[A, B](n: Nest[A, B], a: A): <<\[A, B] = new <<\(n, a)
+  def apply[A, B](b: B, partial: <<\[A, B]): Nest[A, B] = <<\>>(b, partial.n, partial.a)
   def unapply[A, B](n: Nest[A, B]): Option[(A, \>>[A, B])] = n match {
     case Nest.empty        => None
+    case <</>>(a, nest, b) => Some((a, \>>(nest, b)))
     case <<\>>(b, nest, a) => Some((a, \>>(nest, b)))
   }
 }
@@ -82,8 +82,8 @@ object Nest {
 
 //TODO deal with syntax and sealing
 trait Nest[+A, +B] {
-  def />>[D >: B](d: D): PartialNestB[A, D] = PartialNestB(this, d)
-  def \>>[C >: A](c: C): PartialNestA[C, B] = PartialNestA(this, c)
+  def />>[C >: A, D >: B](d: D): <</[C, D] = <</(this, d)
+  def \>>[C >: A, D >: B](c: C): <<\[C, D] = <<\(this, c)
 
   private[nest] def use[C](f: List[Pair[A, B]] => C): C = this match {
     case NestWrap(pairs) => f(pairs)
