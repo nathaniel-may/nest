@@ -49,15 +49,18 @@ private[nest] trait Pair[+A, +B]{
     case BA(b, a) => Right(b, a)
   }
 }
+
 private object Pair {
   // Not returning Pair because of type erasure
   def apply[A, B](a: A, b: B): AB[A, B] = AB(a, b)
   def apply[A, B](b: B, a: A): BA[A, B] = BA(b, a)
 }
+
 private[nest] case class AB[A, B] (a: A, b: B) extends Pair[A, B]
 object AB {
   def apply[A, B](pair: (A, B)): AB[A, B] = AB(pair._1, pair._2)
 }
+
 private[nest] case class BA[A, B] (b: B, a: A) extends Pair[A, B]
 object BA {
   def apply[A, B](pair: (B, A)): BA[A, B] = BA(pair._1, pair._2)
@@ -89,9 +92,6 @@ final case class Nest[+A, +B] private[nest] (pairs: List[Pair[A, B]]) {
   lazy val depth: Int = pairs.size
 
   lazy val size: Int = depth
-
-  // TODO flatmap impl (or ap impl)
-  //def flatMap[C, D](f: Either[(A, B), (B, A)] => Nest[C, D]): Nest[C, D] = ???
 
   // TODO replace with bimap???
   def map[C, D](f: Either[(A, B), (B, A)] => Either[(C, D), (D, C)]): Nest[C, D] =
