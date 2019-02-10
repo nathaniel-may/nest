@@ -12,10 +12,9 @@ import Generators._
 
 object NestProperties extends Properties("Nest"){
 
-  property("toList works") = forAll(evenGen[Int]) {
-    (e: Even[Int]) =>
-      toNest(e).toList.map(_.fold(identity, identity)) ==
-      e.wrapped.toList
+  property("toList works") = forAll(pairsGen[Int, Boolean]) {
+    (pairs: List[Pair[Int, Boolean]]) =>
+      NestWrap(pairs).toList == inOrder(pairs)
   }
 
   property("toStream works") = forAll(evenGen[Int]) {

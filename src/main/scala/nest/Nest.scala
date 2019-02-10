@@ -131,10 +131,10 @@ trait Nest[+A, +B] { //TODO I switched these...? c and d
   //TODO get rid of this either with an implicit class with type [A <: C, B <: C] (either.merge works this way)
   def toStream: Stream[Either[A, B]] = {
     unfold[(Nest[A, B], Stream[Either[A, B]]), Either[A, B]]((this, Stream())) {
-      case (Nest.empty, Stream.Empty)           => None
-      case (Nest.empty, ab #:: abs)             => Some((ab, (Nest.empty, abs)))
-      case (NestWrap(AB(a, b) :: pairs), tail) => Some((Left(a), (NestWrap(pairs), Right(b) #:: tail)))
-      case (NestWrap(BA(b, a) :: pairs), tail) => Some((Left(a), (NestWrap(pairs), Right(b) #:: tail)))
+      case (Nest.empty, Stream.Empty)         => None
+      case (Nest.empty, ab #:: abs)           => Some((ab, (Nest.empty, abs)))
+      case (NestWrap(AB(a, b) :: pairs), abs) => Some((Left(a),  (NestWrap(pairs), Right(b) #:: abs)))
+      case (NestWrap(BA(b, a) :: pairs), abs) => Some((Right(b), (NestWrap(pairs), Left(a)  #:: abs)))
     }
   }
 
