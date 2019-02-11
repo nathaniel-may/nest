@@ -11,17 +11,17 @@ import Generators._
 object NestProperties extends Properties("Nest"){
 
   property("toList works") = forAll(pairsGen[Int, Boolean]) {
-    (pairs: List[Pair[Int, Boolean]]) =>
+    pairs: List[Pair[Int, Boolean]] =>
       Nest(pairs).toList == inOrder(pairs)
   }
 
   property("toStream works") = forAll(pairsGen[Int, Boolean]) {
-    (pairs: List[Pair[Int, Boolean]]) =>
+    pairs: List[Pair[Int, Boolean]] =>
       Nest(pairs).toStream == inOrder(pairs).toStream
   }
 
   property("matching works") = forAll(nestGen[Int, Boolean]) {
-    (n: Nest[Int, Boolean]) =>
+    n: Nest[Int, Boolean] =>
         val list: List[Either[Int, Boolean]] = n match {
         case Nest.empty                     => List()
         case a </: Nest.empty :/> b         => List(Left(a), Right(b))
@@ -37,18 +37,37 @@ object NestProperties extends Properties("Nest"){
   }
 
   property("constructor syntax works") = forAll(nestGen[Int, Boolean]) {
-    (n: Nest[Int, Boolean]) =>
-      (n match {
-        case Nest.empty                     => Nest.empty
-        case a </: Nest.empty :/> b         => a </: Nest.empty :/> b
-        case a </: nest :/> b               => a </: nest :/> b
-        case a </: (b </: nest :/> c) :/> d => a </: (b </: nest :/> c) :/> d
-        case a <\: Nest.empty :\> b         => a <\: Nest.empty :\> b
-        case a <\: nest :\> b               => a <\: nest :\> b
-        case a <\: (b <\: nest :\> c) :\> d => a <\: (b <\: nest :\> c) :\> d
-        case a <\: (b </: nest :/> c) :\> d => a <\: (b </: nest :/> c) :\> d
-        case a </: (b <\: nest :\> c) :/> d => a </: (b <\: nest :\> c) :/> d
-      }) == n
+    n: Nest[Int, Boolean] => (n match {
+      case Nest.empty                     => Nest.empty
+      case a </: Nest.empty :/> b         => a </: Nest.empty :/> b
+      case a </: nest :/> b               => a </: nest :/> b
+      case a </: (b </: nest :/> c) :/> d => a </: (b </: nest :/> c) :/> d
+      case a <\: Nest.empty :\> b         => a <\: Nest.empty :\> b
+      case a <\: nest :\> b               => a <\: nest :\> b
+      case a <\: (b <\: nest :\> c) :\> d => a <\: (b <\: nest :\> c) :\> d
+      case a <\: (b </: nest :/> c) :\> d => a <\: (b </: nest :/> c) :\> d
+      case a </: (b <\: nest :\> c) :/> d => a </: (b <\: nest :\> c) :/> d
+    }) == n
+  }
+
+  property("bad matching fails") = forAll(nestGen[Int, Boolean]) {
+    n: Nest[Int, Boolean] => n match {
+      case nest @ Nest.empty => nest match {
+        case </>(_, _, _) => false
+        case <\>(_, _, _) => false
+        case </:(_,_)     => false
+        case <\:(_,_)     => false
+        case _            => true
+      }
+      case nest @ </>(_, _, _) => nest match {
+        case <\:(_,_)     => false
+        case _            => true
+      }
+      case nest @ <\>(_, _, _) => nest match {
+        case </:(_,_)     => false
+        case _            => true
+      }
+    }
   }
 
   property("depth is accurate") = forAll(nestGen[Int, Boolean]){
