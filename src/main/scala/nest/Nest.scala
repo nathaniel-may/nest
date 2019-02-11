@@ -28,7 +28,7 @@ object <\: {
 object </> {
   def apply[A, B](a: A, nest: Nest[A, B], b: B): Nest[A, B] = nest.wrapWith(AB(a, b) :: _)
   def unapply[A, B](n: Nest[A, B]): Option[(A, Nest[A, B], B)] = n match {
-    case Nest.empty              => None
+    case Nest(Nil)               => None
     case Nest(BA(_, _) :: _)     => None
     case Nest(AB(a, b) :: pairs) => Some(a, Nest(pairs), b)
   }
@@ -37,7 +37,7 @@ object </> {
 object <\> {
   def apply[A, B](b: B, nest: Nest[A, B], a: A): Nest[A, B] = nest.wrapWith(BA(b, a) :: _)
   def unapply[A, B](n: Nest[A, B]): Option[(B, Nest[A, B], A)] = n match {
-    case Nest.empty              => None
+    case Nest(Nil)               => None
     case Nest(AB(_, _) :: _)     => None
     case Nest(BA(b, a) :: pairs) => Some(b, Nest(pairs), a)
   }
@@ -51,14 +51,7 @@ private[nest] sealed trait Pair[+A, +B]{
 }
 
 private[nest] case class AB[A, B] (a: A, b: B) extends Pair[A, B]
-object AB {
-  def apply[A, B](pair: (A, B)): AB[A, B] = AB(pair._1, pair._2)
-}
-
 private[nest] case class BA[A, B] (b: B, a: A) extends Pair[A, B]
-object BA {
-  def apply[A, B](pair: (B, A)): BA[A, B] = BA(pair._1, pair._2)
-}
 
 object Nest {
   val empty = Nest(Nil)
