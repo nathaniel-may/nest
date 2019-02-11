@@ -50,4 +50,8 @@ object NestProperties extends Properties("Nest"){
         case a </: (b <\: nest :\> c) :/> d => a </: (b <\: nest :\> c) :/> d
       }) == n
   }
+
+  property("depth is accurate") = forAll(nestGen[Int, Boolean]){
+    n: Nest[Int, Boolean] => n.depth == n.pairs.size && n.size == n.pairs.size
+  }
 }
