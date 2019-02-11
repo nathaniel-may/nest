@@ -23,8 +23,8 @@ jobs:
       - restore_cache:
           key: sbt-cache
       - run:
-          name: Compile nest dist package
-          command: cat /dev/null | sbt clean update dist
+          name: Compile
+          command: sbt test:compile
       - store_artifacts:
           path: target/universal/nest.zip
           destination: nest
