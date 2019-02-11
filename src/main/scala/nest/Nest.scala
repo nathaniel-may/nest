@@ -2,6 +2,7 @@ package nest
 
 import scalaz.Scalaz.unfold
 
+
 final case class :/>[+A, +B](n: Nest[A, B], b: B) {
   def </:[C >: A, D >: B](c: C): Nest[C, D] = </>(c, n, b)
 }
