@@ -1,0 +1,16 @@
+coverage:
+  status:
+    project:
+      default: off
+      nest:
+        flags: nest
+        target: 80%
+
+flags:
+  adder:
+    paths:
+      - src/main/scala/nest
+    assume: true
+  tests:
+    paths:
+      - src/test/scala/nest
