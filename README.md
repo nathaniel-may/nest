@@ -2,7 +2,7 @@
 [![CircleCI](https://circleci.com/gh/nathaniel-may/Nest/tree/master.svg?style=svg)](https://circleci.com/gh/nathaniel-may/Nest/tree/master)
 [![codecov](https://codecov.io/gh/nathaniel-may/Nest/branch/master/graph/badge.svg)](https://codecov.io/gh/nathaniel-may/Nest)
 
-A data type for managing nested pairs.
+A data type for managing nested pairs.  
 
 ## Code Examples:
 construction:
