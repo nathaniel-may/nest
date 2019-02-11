@@ -31,7 +31,6 @@ object </> {
     case Nest.empty              => None
     case Nest(BA(_, _) :: _)     => None
     case Nest(AB(a, b) :: pairs) => Some(a, Nest(pairs), b)
-    case Nest(_)                 => None
   }
 }
 
@@ -41,11 +40,10 @@ object <\> {
     case Nest.empty              => None
     case Nest(AB(_, _) :: _)     => None
     case Nest(BA(b, a) :: pairs) => Some(b, Nest(pairs), a)
-    case Nest(_)                 => None
   }
 }
 
-private[nest] trait Pair[+A, +B]{
+private[nest] sealed trait Pair[+A, +B]{
   def toTuple: Either[(A, B), (B, A)] = this match {
     case AB(a, b) => Left (a, b)
     case BA(b, a) => Right(b, a)

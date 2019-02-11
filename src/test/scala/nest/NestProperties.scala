@@ -60,10 +60,12 @@ object NestProperties extends Properties("Nest"){
         case _            => true
       }
       case nest @ </>(_, _, _) => nest match {
+        case <\>(_, _, _) => false
         case <\:(_,_)     => false
         case _            => true
       }
       case nest @ <\>(_, _, _) => nest match {
+        case </>(_, _, _) => false
         case </:(_,_)     => false
         case _            => true
       }
