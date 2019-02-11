@@ -75,7 +75,7 @@ final case class Nest[+A, +B] private[nest] (pairs: List[Pair[A, B]]) {
 
   lazy val size: Int = depth
 
-  // TODO replace with bimap???
+  // TODO this isn't really map. replace with something else or remove. bimap???
   def map[C, D](f: Either[(A, B), (B, A)] => Either[(C, D), (D, C)]): Nest[C, D] =
     Nest[C, D](pairs.map {
       case AB(a, b) => Nest.toPair(f(Left (a, b)))

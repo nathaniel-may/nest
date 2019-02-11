@@ -72,7 +72,22 @@ object NestProperties extends Properties("Nest"){
     }
   }
 
-  property("depth is accurate") = forAll(nestGen[Int, Boolean]){
+  property("depth is accurate") = forAll(nestGen[Int, Boolean]) {
     n: Nest[Int, Boolean] => n.depth == n.pairs.size && n.size == n.pairs.size
+  }
+
+  property("map works") = forAll(nestGen[Int, Boolean]) {
+    n: Nest[Int, Boolean] =>
+      val f: Either[(Int, Boolean), (Boolean, Int)] => Either[(Int, String), (String, Int)] = {
+        case Left ((i, b)) => Left ((i + 1,      b.toString))
+        case Right((b, i)) => Right((b.toString, i + 1))
+      }
+
+      val ff: Either[Int, Boolean] => Either[Int, String] = {
+        case Left (i) => Left (i + 1)
+        case Right(b) => Right(b.toString)
+      }
+
+      n.map(f).toList == n.toList.map(ff)
   }
 }
