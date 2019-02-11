@@ -50,12 +50,6 @@ private[nest] sealed trait Pair[+A, +B]{
   }
 }
 
-private object Pair {
-  // Not returning Pair because of type erasure
-  def apply[A, B](a: A, b: B): AB[A, B] = AB(a, b)
-  def apply[A, B](b: B, a: A): BA[A, B] = BA(b, a)
-}
-
 private[nest] case class AB[A, B] (a: A, b: B) extends Pair[A, B]
 object AB {
   def apply[A, B](pair: (A, B)): AB[A, B] = AB(pair._1, pair._2)
