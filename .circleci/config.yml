@@ -13,6 +13,6 @@ jobs:
       - save_cache:
           paths: [ "~/.m2", "~/.ivy2", "~/.cache/coursier" ]
           key: scala-library-dependencies-{{ checksum "build.sbt" }}
-      - run: sbt test
+      - run: sbt clean coverage test coverageReport
       - codecov/upload:
           file: coverage/*.json
