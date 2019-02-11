@@ -2,7 +2,7 @@ package nest
 
 // Scalacheck
 import org.scalacheck.Prop.forAll
-import org.scalacheck.{Arbitrary, Gen, Properties, Shrink}
+import org.scalacheck.{Arbitrary, Properties}
 
 // Project
 import Functions._

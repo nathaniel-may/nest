@@ -3,10 +3,15 @@
 [![codecov](https://codecov.io/gh/nathaniel-may/Nest/branch/master/graph/badge.svg)](https://codecov.io/gh/nathaniel-may/Nest)
 
 A data type for managing nested pairs.  
+  
+Use cases:  
+  - Balanced parentheses problems
+  - Representing an arbitrary 2 dimensional walk
 
 ## Code Examples:
 construction:
 ```scala
+// all of type Nest[String, Boolean]
 val n0 = Nest("hello", true)
 val n1 = </>("hello", true)
 val n2 = <\>(true, "hello")
@@ -28,11 +33,13 @@ lists:
 val nest = ("a" </: ("b" </: Nest.empty :/> "c") :/> "d")
 nest match {
   case Nest.empty => ""
-  case s1 </: _ :/> s2 => s"$s1 $s2" // <--- matches here
+  case s1 </: _ :/> s2 => s"$s1 $s2" // <--- matches here as "a d"
   case s1 <\: _ :\> s2 => s"$s1 $s2"
-} // ---> "a d"
+}
 nest.toList // ---> List("a", "b", "c", "d")
 ```
 
 ## Future Improvements:
-  - default to lazy behavior
+  - provide better map interface
+  - implement scalacheck shrinker for nest
+  - consider defaulting to lazy behavior
