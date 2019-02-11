@@ -1,5 +1,5 @@
 # Nest
-[![Build Status](https://travis-ci.com/nathaniel-may/Nest.svg?token=x1VSNGSPYqsoP9yQZN2W&branch=master)](https://travis-ci.com/nathaniel-may/Nest)
+[![CircleCI](https://circleci.com/gh/nathaniel-may/Nest/tree/master.svg?style=svg)](https://circleci.com/gh/nathaniel-may/Nest/tree/master)
 [![codecov](https://codecov.io/gh/nathaniel-may/Nest/branch/master/graph/badge.svg?token=PoGKLjiXwQ)](https://codecov.io/gh/nathaniel-may/Nest)
 
 A data type for managing nested pairs.
