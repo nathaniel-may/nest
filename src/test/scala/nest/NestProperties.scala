@@ -91,11 +91,13 @@ object NestProperties extends Properties("Nest"){
       n.map(f).toList == n.toList.map(ff)
   }
 
-  property("list wrappers work. i.e. reverse, drop, take, prepend, append") = forAll(nestGen[Int, Boolean], implicitly[Arbitrary[Int]].arbitrary) {
+  property("list wrappers work. i.e. isEmpty, reverse, drop, take, and pluck") = forAll(nestGen[Int, Boolean], implicitly[Arbitrary[Int]].arbitrary) {
     (n: Nest[Int, Boolean], i: Int) =>
-      n.reverse.pairs == n.pairs.reverse &&
-      n.drop(i).pairs == n.pairs.drop(i) &&
-      n.take(i).pairs == n.pairs.take(i)
+      n.isEmpty        == n.pairs.isEmpty &&
+      n.reverse.pairs  == n.pairs.reverse &&
+      n.drop(i).pairs  == n.pairs.drop(i) &&
+      n.take(i).pairs  == n.pairs.take(i) &&
+      n.pluck(i).pairs == n.pairs.take(i) ::: n.pairs.drop(i + 1)
   }
 
   property("prepend works") = forAll(nestGen[Int, Boolean], nestGen[Int, Boolean]) {
