@@ -7,7 +7,7 @@ coverage:
         target: 80%
 
 flags:
-  adder:
+  nest:
     paths:
       - src/main/scala/nest
     assume: true
