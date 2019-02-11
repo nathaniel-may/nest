@@ -1,4 +1,6 @@
 version: 2
+orbs:
+  codecov: codecov/codecov@1.0.3
 jobs:
   build:
     docker:
@@ -12,3 +14,5 @@ jobs:
           paths: [ "~/.m2", "~/.ivy2", "~/.cache/coursier" ]
           key: scala-library-dependencies-{{ checksum "build.sbt" }}
       - run: sbt test
+      - codecov/upload:
+          file: coverage/*.json
