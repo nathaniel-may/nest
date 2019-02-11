@@ -1,12 +1,24 @@
 # nest
 [![CircleCI](https://circleci.com/gh/nathaniel-may/nest/tree/master.svg?style=svg)](https://circleci.com/gh/nathaniel-may/nest/tree/master)
 [![codecov](https://codecov.io/gh/nathaniel-may/Nest/branch/master/graph/badge.svg)](https://codecov.io/gh/nathaniel-may/Nest)
+[![Release](https://jitpack.io/v/nathaniel-may/nest.svg)](https://jitpack.io/#User/Repo)
 
 A data type for managing nested pairs.  
   
 Use cases:  
   - Balanced parentheses problems
   - Representing an arbitrary 2 dimensional walk
+
+## Including in your project
+In `build.sbt` add the jitpack resolver:
+```
+resolvers += "jitpack" at "https://jitpack.io"
+```
+
+In `build.sbt` add the library dependency:
+```
+libraryDependencies += "com.github.nathaniel-may" % "nest" % "v0.1.0"
+```
 
 ## Code Examples:
 construction:
