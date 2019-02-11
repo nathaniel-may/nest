@@ -100,6 +100,12 @@ object NestProperties extends Properties("Nest"){
       n.pluck(i).pairs == n.pairs.take(i) ::: n.pairs.drop(i + 1)
   }
 
+  property("lift works") = forAll(nestGen[Int, Boolean], implicitly[Arbitrary[Int]].arbitrary) {
+    (n: Nest[Int, Boolean], i: Int) =>
+      n.lift(i) == n.pairs.drop(i).headOption.map(_.toTuple)
+  }
+
+
   property("prepend works") = forAll(nestGen[Int, Boolean], nestGen[Int, Boolean]) {
     (n0: Nest[Int, Boolean], n1: Nest[Int, Boolean]) =>
       n0.prepend(n1).toList == n1.toList.take(n1.size) ::: n0.toList ::: n1.toList.drop(n1.size)
