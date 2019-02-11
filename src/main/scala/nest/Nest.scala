@@ -56,11 +56,6 @@ private[nest] case class BA[A, B] (b: B, a: A) extends Pair[A, B]
 object Nest {
   val empty = Nest(Nil)
 
-  def apply[A, B](pair: (A, B)): Nest[A, B] = Nest(pair._1, pair._2)
-  def apply[A, B](a: A, b: B): Nest[A, B] = Nest(List(AB(a, b)))
-  def apply[A, B](pair: AB[A, B]): Nest[A, B] = Nest(List(pair))
-  def apply[A, B](pair: BA[A, B]): Nest[A, B] = Nest[A, B](List(pair))
-
   private[nest] def toPair[A, B](eab: Either[(A, B), (B, A)]): Pair[A, B] =
     eab.fold(p => AB(p._1, p._2), p => BA(p._1, p._2))
 
