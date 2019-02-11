@@ -15,7 +15,6 @@ val n4 = true <\: Nest.empty :\> "hello"
 ```
 
 pattern matching:
-
 ```scala
 Nest("hello", true) match {
   case Nest.empty             => false
